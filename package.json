@@ -1,0 +1,22 @@
+{
+  "name": "canvas-glow",
+  "version": "1.0.0",
+  "description": "Canvas Glow Effect",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WebSeed/CanvasGlow.git"
+  },
+  "author": "Will Bamford",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/WebSeed/CanvasGlow/issues"
+  },
+  "homepage": "https://github.com/WebSeed/CanvasGlow#readme",
+  "dependencies": {
+    "stackblur-canvas": "git+https://github.com/WebSeed/StackBlur.git"
+  }
+}
