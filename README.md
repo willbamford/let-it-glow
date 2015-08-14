@@ -1,6 +1,8 @@
-# Canvas Glow
+# Let It Glow
 
-## API
+Please note, this library is pre-alpha.
+
+## Proposed API
 
 ```js
 var canvasGlow = CanvasGlow.create('my-canvas-id', {
