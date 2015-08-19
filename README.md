@@ -3,8 +3,8 @@
 ## API
 
 ```js
-var canvasGlow = CanvasGlow.create('my-canvas-id', {
-    
+var letItGlow = LetItGlow.create('my-canvas-id', {
+
 });
 ```
 

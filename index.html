@@ -10,19 +10,69 @@
         border: 0;
       }
 
+      body {
+        background: black;
+      }
+
       canvas {
         display: inline-block;
         font-size: 0;
         line-height: 0;
         vertical-align: top;
-        width: 200px;
-        height: 50px;
+        width: 50%;
+        height: auto;
       }
     </style>
   </head>
   <body>
 
-    <script src="node_modules/stackblur-canvas/dist/stackblur.js"></script>
-    <script src="canvas-glow-ref.js"></script>
+    <script src="dist/let-it-glow.js"></script>
+
+    <script>
+
+      var map = LetItGlow.GlowMap.create(
+        Math.random() * 5.0,
+        Math.random() * 5.0,
+        Math.random() * 5.0
+      );
+
+      // var canvas = LetItGlow.createCanvasWithText('Let It Glow!');
+      // var letItGlow = LetItGlow.create(canvas, {
+      //   map: map
+      // });
+      //
+      // document.write('<br/>');
+
+      LetItGlow.createCanvasWithImage('image3.jpg', function(canvas) {
+        var letItGlow = LetItGlow.create(canvas, {
+          map: map
+        });
+      });
+
+      document.write('<br/>');
+
+      LetItGlow.createCanvasWithImage('image4.jpg', function(canvas) {
+        var letItGlow = LetItGlow.create(canvas, {
+          map: map
+        });
+      });
+
+      document.write('<br/>');
+
+      LetItGlow.createCanvasWithImage('image5.jpg', function(canvas) {
+        var letItGlow = LetItGlow.create(canvas, {
+          map: map
+        });
+      });
+
+      document.write('<br/>');
+
+      LetItGlow.createCanvasWithImage('image6.jpg', function(canvas) {
+        var letItGlow = LetItGlow.create(canvas, {
+          map: map
+        });
+      });
+
+    </script>
   </body>
 </html>

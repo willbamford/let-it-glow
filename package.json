@@ -1,9 +1,9 @@
 {
   "name": "let-it-glow",
   "version": "0.0.1",
-  "description": "Canvas Glow Effect",
+  "description": "Let It Glow: Canvas Glow FX",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "watch": "watchify src/let-it-glow.js -o dist/let-it-glow.js -s LetItGlow -v"
   },
   "repository": {
     "type": "git",
@@ -17,5 +17,8 @@
   "homepage": "https://github.com/WebSeed/let-it-glow#readme",
   "dependencies": {
     "stackblur-canvas": "git+https://github.com/WebSeed/StackBlur.git"
+  },
+  "devDependencies": {
+    "watchify": "^3.3.1"
   }
 }
