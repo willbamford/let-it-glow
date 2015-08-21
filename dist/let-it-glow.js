@@ -625,7 +625,7 @@ module.exports = {
 };
 
 },{}],2:[function(require,module,exports){
-function applyFilter(fn, imageData) {
+function applyFilter(fn, glow, imageData) {
 
   var offset4 = 0;
   for (var y = 0; y < imageData.height; y += 1) {
@@ -636,7 +636,7 @@ function applyFilter(fn, imageData) {
       var blue = imageData.data[offset4 + 2];
       var alpha = imageData.data[offset4 + 3];
 
-      var value = fn(x, y, red, green, blue, alpha);
+      var value = fn(x, y, red, green, blue, alpha, glow);
 
       imageData.data[offset4 + 0] = 255;
       imageData.data[offset4 + 1] = 255;
@@ -714,24 +714,26 @@ function applyGlow(opts, imageData) {
   target.height = imageData.height;
   var tg = target.getContext('2d');
 
-  var strength = opts.strength;
   var spread = opts.spread;
-  var attenuation = opts.attenuation;
+  var passes = opts.passes;
+  var highlight = opts.highlight;
 
-  while (spread > 1.0) {
-
-    // console.log('Pass with spread ' + spread);
-
-    tg.save();
-    tg.globalCompositeOperation = 'lighter';
-    tg.globalAlpha = strength;
+  tg.save();
+  tg.globalCompositeOperation = 'lighter';
+  while (passes > 0) {
+    console.log('Pass with spread: ' + spread);
     tg.drawImage(source, 0, 0);
     StackBlur.canvasRGBA(target, 0, 0, imageData.width, imageData.height, spread);
-    tg.restore();
-    spread = spread / attenuation;
+    spread = spread / 2;
+    passes -= 1;
   }
 
-  tg.drawImage(source, 0, 0);
+  if (highlight > 0) {
+    tg.globalAlpha = highlight;
+    tg.drawImage(source, 0, 0);
+  }
+
+  tg.restore();
 
   return tg.getImageData(0, 0, target.width, target.height);
 }
@@ -909,21 +911,22 @@ var LetItGlow = function(canvas, opts) {
 
   opts = opts || {};
 
-  opts.filterFn = opts.filterFn || function(x, y, red, green, blue, alpha) {
+  opts.glow = opts.glow || {
+    spread: 50.0,
+    passes: 1,
+    highlight: 0.2
+  };
+
+  opts.filterFn = opts.filterFn || function(x, y, red, green, blue, alpha, glow) {
     var brightness = colorUtils.brightness(red, green, blue);
     // brightness = brightness / 255;
     // brightness = (brightness * brightness) * 255;
 
-    brightness = (brightness - 200) * 2;
-    // brightness = brightness > 200 ? 255 : 0;
+    // brightness = brightness / 8;
+    // brightness = brightness - 200;
+    brightness = brightness > 200 ? 255 : 0;
     alpha = alpha / 255;
-    return alpha * brightness;
-  };
-
-  opts.glow = opts.glow || {
-    strength: 0.8,
-    spread: 128.0,
-    attenuation: 1.5
+    return alpha * ((brightness - 0) / glow.passes);
   };
 
   opts.map = opts.map || GlowMap.create(Math.random() * 5.0, Math.random() * 5.0, Math.random() * 5.0);
@@ -931,20 +934,18 @@ var LetItGlow = function(canvas, opts) {
   var g = canvas.getContext('2d');
   var imageData = g.getImageData(0, 0, canvas.width, canvas.height);
 
-  var filteredImageData = applyFilter(opts.filterFn, imageData);
+  var filteredImageData = applyFilter(opts.filterFn, opts.glow, imageData);
   var filteredCanvas = createCanvasWithImageData(filteredImageData);
 
   var glowImageData = applyGlow(opts.glow, filteredImageData);
   var glowCanvas = createCanvasWithImageData(glowImageData);
 
-  var mapCanvas = createCanvasWithGlowMap(opts.map);
   var finalCanvas = applyGlowMap(opts.map, canvas, glowImageData);
 
   document.body.appendChild(canvas);
   document.body.appendChild(filteredCanvas);
   document.body.appendChild(glowCanvas);
   document.body.appendChild(finalCanvas);
-  document.body.appendChild(mapCanvas);
 
   console.timeEnd('let-it-glow');
 };

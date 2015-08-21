@@ -31,47 +31,67 @@
     <script>
 
       var map = LetItGlow.GlowMap.create(
-        Math.random() * 5.0,
-        Math.random() * 5.0,
-        Math.random() * 5.0
+        3.0,
+        1.0,
+        0.5
       );
 
-      // var canvas = LetItGlow.createCanvasWithText('Let It Glow!');
-      // var letItGlow = LetItGlow.create(canvas, {
-      //   map: map
-      // });
-      //
-      // document.write('<br/>');
+      map = LetItGlow.GlowMap.create(
+        0.0,
+        1.0,
+        3.0
+      );
+
+      map = LetItGlow.GlowMap.create(
+        0.0,
+        3.0,
+        2.0
+      );
+
+      var glow = {
+        spread: 50.0,
+        passes: 3,
+        highlight: 1.0
+      };
+
+      var opts = {
+        glow: glow,
+        map: map
+      };
+
+      var mapCanvas = LetItGlow.createCanvasWithGlowMap(map);
+      document.body.appendChild(mapCanvas);
+
+      document.write('<div>');
+
+      var canvas = LetItGlow.createCanvasWithText('Let It Glow!');
+      var letItGlow = LetItGlow.create(canvas, opts);
+
+      document.write('</div><div>');
 
       LetItGlow.createCanvasWithImage('image3.jpg', function(canvas) {
-        var letItGlow = LetItGlow.create(canvas, {
-          map: map
-        });
+        var letItGlow = LetItGlow.create(canvas, opts);
       });
 
-      document.write('<br/>');
+      document.write('</div><div>');
 
       LetItGlow.createCanvasWithImage('image4.jpg', function(canvas) {
-        var letItGlow = LetItGlow.create(canvas, {
-          map: map
-        });
+        var letItGlow = LetItGlow.create(canvas, opts);
       });
 
-      document.write('<br/>');
+      document.write('</div><div>');
 
       LetItGlow.createCanvasWithImage('image5.jpg', function(canvas) {
-        var letItGlow = LetItGlow.create(canvas, {
-          map: map
-        });
+        var letItGlow = LetItGlow.create(canvas, opts);
       });
 
-      document.write('<br/>');
+      document.write('</div><div>');
 
       LetItGlow.createCanvasWithImage('image6.jpg', function(canvas) {
-        var letItGlow = LetItGlow.create(canvas, {
-          map: map
-        });
+        var letItGlow = LetItGlow.create(canvas, opts);
       });
+
+      document.write('</div>');
 
     </script>
   </body>

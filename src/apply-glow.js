@@ -13,24 +13,26 @@ function applyGlow(opts, imageData) {
   target.height = imageData.height;
   var tg = target.getContext('2d');
 
-  var strength = opts.strength;
   var spread = opts.spread;
-  var attenuation = opts.attenuation;
+  var passes = opts.passes;
+  var highlight = opts.highlight;
 
-  while (spread > 1.0) {
-
-    // console.log('Pass with spread ' + spread);
-
-    tg.save();
-    tg.globalCompositeOperation = 'lighter';
-    tg.globalAlpha = strength;
+  tg.save();
+  tg.globalCompositeOperation = 'lighter';
+  while (passes > 0) {
+    console.log('Pass with spread: ' + spread);
     tg.drawImage(source, 0, 0);
     StackBlur.canvasRGBA(target, 0, 0, imageData.width, imageData.height, spread);
-    tg.restore();
-    spread = spread / attenuation;
+    spread = spread / 2;
+    passes -= 1;
   }
 
-  tg.drawImage(source, 0, 0);
+  if (highlight > 0) {
+    tg.globalAlpha = highlight;
+    tg.drawImage(source, 0, 0);
+  }
+
+  tg.restore();
 
   return tg.getImageData(0, 0, target.width, target.height);
 }

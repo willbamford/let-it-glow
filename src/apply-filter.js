@@ -1,4 +1,4 @@
-function applyFilter(fn, imageData) {
+function applyFilter(fn, glow, imageData) {
 
   var offset4 = 0;
   for (var y = 0; y < imageData.height; y += 1) {
@@ -9,7 +9,7 @@ function applyFilter(fn, imageData) {
       var blue = imageData.data[offset4 + 2];
       var alpha = imageData.data[offset4 + 3];
 
-      var value = fn(x, y, red, green, blue, alpha);
+      var value = fn(x, y, red, green, blue, alpha, glow);
 
       imageData.data[offset4 + 0] = 255;
       imageData.data[offset4 + 1] = 255;

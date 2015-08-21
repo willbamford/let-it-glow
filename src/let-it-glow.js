@@ -13,21 +13,22 @@ var LetItGlow = function(canvas, opts) {
 
   opts = opts || {};
 
-  opts.filterFn = opts.filterFn || function(x, y, red, green, blue, alpha) {
+  opts.glow = opts.glow || {
+    spread: 50.0,
+    passes: 1,
+    highlight: 0.2
+  };
+
+  opts.filterFn = opts.filterFn || function(x, y, red, green, blue, alpha, glow) {
     var brightness = colorUtils.brightness(red, green, blue);
     // brightness = brightness / 255;
     // brightness = (brightness * brightness) * 255;
 
-    brightness = (brightness - 200) * 2;
-    // brightness = brightness > 200 ? 255 : 0;
+    // brightness = brightness / 8;
+    // brightness = brightness - 200;
+    brightness = brightness > 200 ? 255 : 0;
     alpha = alpha / 255;
-    return alpha * brightness;
-  };
-
-  opts.glow = opts.glow || {
-    strength: 0.8,
-    spread: 128.0,
-    attenuation: 1.5
+    return alpha * ((brightness - 0) / glow.passes);
   };
 
   opts.map = opts.map || GlowMap.create(Math.random() * 5.0, Math.random() * 5.0, Math.random() * 5.0);
@@ -35,20 +36,18 @@ var LetItGlow = function(canvas, opts) {
   var g = canvas.getContext('2d');
   var imageData = g.getImageData(0, 0, canvas.width, canvas.height);
 
-  var filteredImageData = applyFilter(opts.filterFn, imageData);
+  var filteredImageData = applyFilter(opts.filterFn, opts.glow, imageData);
   var filteredCanvas = createCanvasWithImageData(filteredImageData);
 
   var glowImageData = applyGlow(opts.glow, filteredImageData);
   var glowCanvas = createCanvasWithImageData(glowImageData);
 
-  var mapCanvas = createCanvasWithGlowMap(opts.map);
   var finalCanvas = applyGlowMap(opts.map, canvas, glowImageData);
 
   document.body.appendChild(canvas);
   document.body.appendChild(filteredCanvas);
   document.body.appendChild(glowCanvas);
   document.body.appendChild(finalCanvas);
-  document.body.appendChild(mapCanvas);
 
   console.timeEnd('let-it-glow');
 };
