@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Let It Glow: WebGL</title>
+    <script src="./webgl-toolbox.js"></script>
+  </head>
+  <body>
+
+    <script id="v-shader" type="x-shader/x-vertex">
+      attribute vec2 aPosition;
+      attribute vec2 aTexCoord;
+      uniform vec2 uResolution;
+      varying vec2 vTexCoord;
+
+      void main() {
+
+        vec2 posNorm = aPosition / (-0.5 * uResolution);
+        gl_Position = vec4(posNorm, 0, 1);
+        vTexCoord = aTexCoord;
+      }
+    </script>
+
+    <script id="fs-blur-h" type="x-shader/x-fragment">
+      precision mediump float;
+      uniform sampler2D uImage;
+
+      uniform float uOffsets[5];
+      uniform float uWeights[5];
+
+      uniform vec2 uTexSize;
+      varying vec2 vTexCoord;
+
+      void main() {
+        float onePixel = 1.0 / uTexSize.x;
+        gl_FragColor = texture2D(uImage, vec2(vTexCoord.x, vTexCoord.y)) * uWeights[0];
+
+        for (int i = 1; i < 5; i++) {
+          gl_FragColor += texture2D(uImage, vec2(vTexCoord.x + uOffsets[i] * onePixel, vTexCoord.y)) * uWeights[i];
+          gl_FragColor += texture2D(uImage, vec2(vTexCoord.x - uOffsets[i] * onePixel, vTexCoord.y)) * uWeights[i];
+        }
+      }
+    </script>
+
+    <script id="fs-blur-v" type="x-shader/x-fragment">
+      precision mediump float;
+      uniform sampler2D uImage;
+
+      uniform float uOffsets[5];
+      uniform float uWeights[5];
+
+      uniform vec2 uTexSize;
+      varying vec2 vTexCoord;
+
+      void main() {
+        float onePixel = 1.0 / uTexSize.y;
+        gl_FragColor = texture2D(uImage, vec2(vTexCoord.x, vTexCoord.y)) * uWeights[0];
+
+        for (int i = 1; i < 5; i++) {
+          gl_FragColor += texture2D(uImage, vec2(vTexCoord.x, vTexCoord.y + uOffsets[i] * onePixel)) * uWeights[i];
+          gl_FragColor += texture2D(uImage, vec2(vTexCoord.x, vTexCoord.y - uOffsets[i] * onePixel)) * uWeights[i];
+        }
+      }
+    </script>
+
+    <script>
+      var createSurface = function(opts) {
+
+        var isActive = false;
+
+        var name = opts.name;
+        var gl = opts.gl;
+        var uniformDefs = opts.uniforms || [];
+        var attribDefs = opts.attribs || [];
+
+        var vertexShader = typeof opts.vertexShader !== 'string' ?
+          opts.vertexShader :
+          createShaderFromScript(gl, opts.vertexShader);
+
+        var fragmentShader = typeof opts.fragmentShader !== 'string' ?
+          opts.fragmentShader :
+          createShaderFromScript(gl, opts.fragmentShader);
+
+        var program = createProgram(
+          gl,
+          [vertexShader, fragmentShader],
+          attribDefs
+        );
+
+        var uniforms = {};
+        uniformDefs.forEach(function(uniformDef) {
+          uniforms[uniformDef.key] = {
+            name: uniformDef.name,
+            type: uniformDef.type,
+            value: null,
+            location: gl.getUniformLocation(program, uniformDef.name)
+          };
+        });
+
+        function setActive(active) {
+          if (active !== isActive) {
+            isActive = active;
+            if (isActive) {
+              console.log('Switching program to: ' + name);
+              gl.useProgram(program);
+            }
+          }
+        }
+
+        function getUniform(key) {
+          return uniforms[key].value;
+        }
+
+        function setUniform(key, value) {
+
+          var uniform = uniforms[key];
+          uniform.value = value;
+          var type = uniform.type;
+          var location = uniform.location;
+
+          switch (type) {
+            case 'uniform1fv':
+              gl[type](location, value);
+              break;
+            case 'uniform2f':
+              gl[type](location, value[0], value[1]);
+              break;
+          }
+        }
+
+        return {
+          program: program,
+          uniforms: uniforms,
+          setUniform: setUniform,
+          getUniform: getUniform,
+          isActive: function() { return isActive; },
+          setActive: setActive
+        };
+      };
+
+    </script>
+
+    <script>
+
+      // http://www.html5rocks.com/en/tutorials/webgl/webgl_fundamentals/
+
+      // gl.bindAttribLocation
+      var attribDefs = Object.freeze({
+        texCoord: {
+          key: 'texCoord',
+          name: 'aTexCoord',
+          location: 0
+        },
+        position: {
+          key: 'position',
+          name: 'aPosition',
+          location: 1
+        }
+      });
+
+      var uniformDefs = Object.freeze({
+        resolution: {
+          key: 'resolution',
+          name: 'uResolution',
+          type: 'uniform2f'
+        },
+        offsets: {
+          key: 'offsets',
+          name: 'uOffsets',
+          type: 'uniform1fv'
+        },
+        weights: {
+          key: 'weights',
+          name: 'uWeights',
+          type: 'uniform1fv'
+        },
+        texSize: {
+          key: 'texSize',
+          name: 'uTexSize',
+          type: 'uniform2f'
+        }
+      });
+
+      loadImage('./image5.jpg', render);
+
+      var activeSurface = null;
+      function useSurface(surface) {
+        if (surface !== activeSurface) {
+          surface.setActive(true);
+          if (activeSurface)
+            activeSurface.setActive(false);
+          activeSurface = surface;
+        }
+      }
+
+      function render(image) {
+
+        var canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        document.body.appendChild(canvas);
+
+        var gl = canvas.getContext('webgl');
+
+        var vertexShader = createShaderFromScript(gl, 'v-shader');
+
+        // var hBlurFragmentShader = createShaderFromScript(gl, 'fs-blur-h');
+        // var vBlurFragmentShader = createShaderFromScript(gl, 'fs-blur-v');
+
+        var surface = createSurface({
+          name: 'H Blur',
+          gl: gl,
+          vertexShader: createShaderFromScript(gl, 'v-shader'),
+          fragmentShader: 'fs-blur-h',
+          uniforms: [uniformDefs.resolution, uniformDefs.offsets, uniformDefs.weights, uniformDefs.texSize],
+          attribs: [attribDefs.texCoord, attribDefs.position]
+        });
+
+        var surface2 = createSurface({
+          name: 'V Blur',
+          gl: gl,
+          vertexShader: createShaderFromScript(gl, 'v-shader'),
+          fragmentShader: 'fs-blur-h',
+          uniforms: [uniformDefs.resolution, uniformDefs.offsets, uniformDefs.weights, uniformDefs.texSize],
+          attribs: [attribDefs.texCoord, attribDefs.position]
+        });
+
+        var program = surface.program;
+        //
+        // gl.useProgram(program);
+
+        useSurface(surface);
+
+        surface.setUniform('offsets', new Float32Array([0.0, 1.0, 2.0, 3.0, 4.0]));
+        surface.setUniform('weights', new Float32Array([0.22703, 0.19459, 0.12162, 0.054054, 0.016216]));
+        surface.setUniform('texSize', [image.width, image.height]);
+        surface.setUniform('resolution', [canvas.width, canvas.height]);
+
+        useSurface(surface2);
+        surface2.setUniform('offsets', new Float32Array([0.0, 1.0, 2.0, 3.0, 4.0]));
+
+        useSurface(surface);
+
+        // Texture coordinates attribute
+        var texCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([
+            0.0, 0.0,
+            1.0, 0.0,
+            0.0, 1.0,
+            0.0, 1.0,
+            1.0, 0.0,
+            1.0, 1.0
+          ]),
+          gl.STATIC_DRAW
+        );
+
+        gl.enableVertexAttribArray(attribDefs.texCoord.location);
+        gl.vertexAttribPointer(attribDefs.texCoord.location, 2, gl.FLOAT, false, 0, 0);
+
+        // Image texture
+        var imageTexture = createTexture(gl);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+        // var textures = [];
+        // var framebuffers = [];
+        // for (var i = 0; i < 2; i += 1) {
+        //   var texture = createTexture(gl);
+        //
+        //   gl.texImage2D(
+        //     gl.TEXTURE_2D, 0, gl.RGBA, image.width, image.height, 0,
+        //     gl.RGBA, gl.UNSIGNED_BYTE, null
+        //   );
+        //
+        //   var framebuffer = gl.createFramebuffer();
+        //   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        //
+        //   gl.framebufferTexture2D(
+        //     gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0
+        //   );
+        //
+        //   framebuffers.push(framebuffer);
+        //   textures.push(texture);
+        // }
+
+        // Position attribute
+        var positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.enableVertexAttribArray(attribDefs.position.location);
+        gl.vertexAttribPointer(attribDefs.position.location, 2, gl.FLOAT, false, 0, 0);
+        var hw = image.width / 2;
+        var hh = image.height / 2;
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([
+            -hw, -hh,
+            hw, -hh,
+            -hw, hh,
+            -hw, hh,
+            hw, -hh,
+            hw, hh
+          ]),
+          gl.STATIC_DRAW
+        );
+
+        // Draw
+
+
+
+        gl.bindTexture(gl.TEXTURE_2D, imageTexture);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        // gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+
+        gl.viewport(0, 0, canvas.width, canvas.height);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
+
+    </script>
+
+  </body>
+</html>
